@@ -42,12 +42,13 @@ def user(user_id):
     if request.method == 'PUT':
         user_data = request.json
         result = collection.replace_one({'_id': oid}, user_data)
-        if result.modified_count == 1:
-            #socketio.emit('data_updated', {'event': 'updated', 'data': user_data}, broadcast=True)
-            socketio.emit('data_updated', {'event': 'updated', 'data': user_data})
-            return jsonify({"success": True, "message": "User updated"})
+        if result.matched_count == 0:
+            socketio.emit('data_updated', {'event': 'created', 'data': user_data},)
+            message = "User created"
         else:
-            return jsonify({"success": False, "message": "User not found"})
+            socketio.emit('data_updated', {'event': 'updated', 'data': user_data})
+            message = "User updated"
+        return jsonify({"success": True, "message": message})
     elif request.method == 'PATCH':
         update_data = request.json
         result = collection.update_one({'_id': oid}, {'$set': update_data})
