@@ -8,7 +8,10 @@ import json
 import re
 import requests
 import certifi
-from bson import json_util
+from bson import json_util, ObjectId
+
+
+
 app = Flask(__name__)
 ##MongoDB user
 username = "chengrue"
@@ -19,11 +22,13 @@ mydatabase = "Project"
 db = client.Project
 print(db.list_collection_names())
 
-@app.route('/<path:path>', methods=['PUT', 'POST', 'PATCH', 'DELETE'])
-def handle_request(path):
-	collection_name = re.split('[./]', path)[0]
-	
-	print(collection_name)
+
+
+@app.route('/<collection_name>/<key>.json', methods=['PUT', 'PATCH', 'DELETE'])
+def handle_request(collection_name,key):
+#	collection_name = re.split('[./]', path)[0]
+	oid = key
+	print(collection_name,key)
 	collection = db[collection_name]
 	param = request.args
 	params = {key: int(value) if value.isnumeric() else value.strip('"') for key, value in param.items()}
@@ -35,37 +40,57 @@ def handle_request(path):
 		print(data,'here')
 	response_data = None
 	
-	
 	if request.method == 'PUT':
-		collection.insert_one(data)
-		response_data = data
-	elif request.method == 'POST':
-		collection.insert_one(data)
+		result = collection.replace_one({'_id': ObjectId(oid)}, data)
 		response_data = data
 	elif request.method == 'PATCH':
-		collection.update_many(params, {"$set": data})
-		
+		name = data["name"]
+		document = collection.find_one({"_id": oid})
+		print(document,name)
+		if document:
+			result = collection.update_one({'_id': oid}, {'$set': data})
+			response_data = data
+		else:
+			collection.insert_one(data)
+			response_data = data
+	elif request.method == 'DELETE':
+		result = collection.delete_one({'_id': ObjectId(oid)})
+		return jsonify({"deleted_count": result.deleted_count}), 200		
 	
-			
-	
-	return(json.loads(json_util.dumps(data)))
+	return(json.loads(json_util.dumps(response_data)))
 
-@app.route('/<path:path>', methods=['GET'])
-def get_request(path):
-	collection_name = re.split('[./]', path)[0]
-	
+@app.route('/<collection_name>.json', methods=['POST'])
+def post_reauest(collection_name):
+	collection = db[collection_name]
+	jsons = request.get_data().decode('utf-8')
+	print(jsons)
+	if jsons:
+		data = json.loads(jsons)
+		print(data,'here')
+	response_data = None
+	if request.method == 'POST':
+		collection.insert_one(data)
+		response_data = data
+	return(json.loads(json_util.dumps(response_data)))
+
+@app.route('/<collection_name>.json', methods=['GET'])
+def get_request(collection_name):
+#	collection_name = re.split('[./]', path)[0]
 	print(collection_name)
 	collection = db[collection_name]
 	query_params = request.args
-#	params = {key: int(value) if value.isnumeric() else value.strip('"') for key, value in params.items()}
 	print(query_params)
 	filters = {}
-	
 	
 	if request.method == 'GET':
 		if "orderBy" in query_params:
 			order_by = query_params["orderBy"].strip('"')
-			print(order_by)
+			index_name = collection.create_index([(order_by, ASCENDING)])
+			print(order_by, index_name)
+			indexes = collection.list_indexes()
+			print("Indexes in the 'users' collection:")
+			for index in indexes:
+				print(index["name"])
 			if order_by == "$key":
 				order_by = "_id"
 			elif order_by == "$value":
@@ -92,12 +117,11 @@ def get_request(path):
 				filters[order_by]["$lte"] = int(query_params["endAt"].strip('"'))
 				
 			result = collection.find(filters).sort(order_by, sort_direction).limit(limit)
-			print(filters,order_by,sort_direction,limit)
+			print(filters,order_by,sort_direction,index_name,limit)
 		else:
 			result = collection.find(filters)
 			
 		return(json.loads(json_util.dumps(result)))
-#		return {"users": [dumps(item) for item in result]}
 	
 		
 		
