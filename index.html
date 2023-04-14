@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask API Web App</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Flask API Web App</h1>
+    <button type="button" id="list-users">List Users</button>
+    <div id="user-list"></div>
+    <h2>Create User</h2>
+    <form id="create-user-form">
+        <label for="user-id">User ID:</label>
+        <input type="number" id="user-id" name="user-id" required>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="age">Age:</label>
+        <input type="number" id="age" name="age">
+        <label for="gender">Gender:</label>
+        <input type="text" id="gender" name="gender" required>
+        <button type="submit">Create User</button>
+    </form>
+
+    <h2>Update User</h2>
+    <form id="update-user-form">
+        <label for="update-user-id">User ID:</label>
+        <input type="number" id="update-user-id" name="update-user-id" required>
+        <br>
+        <label for="update-field">Update Field:</label>
+        <select id="update-field" required>
+            <option value="name">Name</option>
+            <option value="age">Age</option>
+            <option value="gender">Gender</option>
+        </select>
+        <br>
+        <!-- <label for="update-field">Field:</label> -->
+        <!-- <input type="text" id="update-field" name="update-field" required> -->
+        <label for="update-value">Value:</label>
+        <input type="text" id="update-value" name="update-value" required>
+        <button type="submit">Update User</button>
+    </form>
+
+    <h2>Delete User</h2>
+    <form id="delete-user-form">
+        <label for="delete-user-id">User ID:</label>
+        <input type="number" id="delete-user-id" name="delete-user-id" required>
+        <button type="submit">Delete User</button>
+    </form>
+
+    <script>
+        const API_BASE_URL = "http://34.217.134.164:5000";
+
+
+        $(document).ready(function() {
+            $("#list-users").click(listUsers);
+            
+            $("#create-user-form").submit(function(event) {
+                event.preventDefault();
+                const user_data = {
+                    _id: $("#user-id").val() ? parseInt($("#user-id").val()) : null,
+                    name: $("#name").val(),
+                    age: $("#age").val() ? parseInt($("#age").val()) : null,
+                    gender: $("#gender").val()
+                };
+                console.log("User data:", user_data);
+                $.ajax({
+                    url: `${API_BASE_URL}/users`,
+                    type: "POST",
+                    data: JSON.stringify(user_data),
+                    contentType: "application/json; charset=utf-8",
+                    success: function(result) {
+                        alert(result.message);
+                        listUsers();
+                    }
+                });                
+                // $.post(`${API_BASE_URL}/users`, user_data, function(result) {
+                //     alert(result.message);
+                //     listUsers();
+                // });
+            });
+
+            $("#update-user-form").submit(function(event) {
+                event.preventDefault();
+                const user_id = $("#update-user-id").val();
+                const update_field = $("#update-field").val();
+                let update_value = $("#update-value").val();
+    
+                if (update_field === 'age') {
+                    update_value = parseInt(update_value);
+                }
+
+                const update_data = {
+                    [update_field]: update_value
+                };                
+                // const update_data = {
+                //     [$("#update-field").val()]: $("#update-value").val()
+                // };
+                console.log("upadate_data:", update_data);
+                $.ajax({
+                    url: `${API_BASE_URL}/users/${user_id}`,
+                    type: "PATCH",
+                    data: JSON.stringify(update_data),
+                    contentType: "application/json; charset=utf-8",
+                    success: function(result) {
+                        alert(result.message);
+                        listUsers();
+                    }
+                });
+            });
+
+            $("#delete-user-form").submit(function(event) {
+                event.preventDefault();
+                const user_id = $("#delete-user-id").val();
+                $.ajax({
+                    url: `${API_BASE_URL}/users/${user_id}`,
+                    type: "DELETE",
+                    success: function(result) {
+                        alert(result.message);
+                        listUsers();
+                    }
+                });
+            });
+        });
+
+        function listUsers() {
+            fetch(`${API_BASE_URL}/users`)
+            .then(response => response.json())
+            .then(users => {
+                const userList = document.getElementById('user-list');
+                userList.innerHTML = '';
+                users.forEach(user => {
+                    userList.innerHTML += `<li>User ID: ${user._id}, Name: ${user.name}, Age: ${user.age}, Gender: ${user.gender}</li>`;
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching users:', error);
+            });
+        }
+    </script>
+</body>
+</html>
+           
