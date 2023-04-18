@@ -10,6 +10,14 @@
     <h1>Flask API Web App</h1>
     <button type="button" id="list-users">List Users</button>
     <div id="user-list"></div>
+    
+    <h2>Find User</h2>
+    <form id="get-user-form">
+        <label for="get-user-id">User ID:</label>
+        <input type="text" id="get-user-id" required>
+        <input type="submit" value="Get User">
+    </form>    
+
     <h2>Create User</h2>
     <form id="create-user-form">
         <label for="user-id">User ID:</label>
@@ -24,7 +32,7 @@
     </form>
 
     <h2>Update User</h2>
-    <form id="update-user-form">
+    <!-- <form id="update-user-form">
         <label for="update-user-id">User ID:</label>
         <input type="number" id="update-user-id" name="update-user-id" required>
         <br>
@@ -34,13 +42,34 @@
             <option value="age">Age</option>
             <option value="gender">Gender</option>
         </select>
-        <br>
+        <br> -->
         <!-- <label for="update-field">Field:</label> -->
         <!-- <input type="text" id="update-field" name="update-field" required> -->
-        <label for="update-value">Value:</label>
+        <!-- <label for="update-value">Value:</label>
         <input type="text" id="update-value" name="update-value" required>
         <button type="submit">Update User</button>
+    </form> -->
+    <form id="update-user-form">
+        <label for="user-id">User ID:</label>
+        <input type="text" id="user-id" required>
+        <br>
+        <div id="update-fields">
+            <div class="update-field-row">
+                <label for="update-field">Field:</label>
+                <select class="update-field" required>
+                    <option value="name">Name</option>
+                    <option value="age">Age</option>
+                    <option value="gender">Gender</option>
+                </select>
+                <label for="update-value">Value:</label>
+                <input type="text" class="update-value" required>
+            </div>
+        </div>
+        <button type="button" id="add-update-field">+</button>
+        <br>
+        <input type="submit" value="Update User">
     </form>
+    
 
     <h2>Delete User</h2>
     <form id="delete-user-form">
@@ -55,6 +84,22 @@
 
         $(document).ready(function() {
             $("#list-users").click(listUsers);
+
+            $("#get-user-form").submit(function(event) {
+                event.preventDefault();
+                const user_id = $("#get-user-id").val();
+                $.ajax({
+                    url: `${API_BASE_URL}/users/${user_id}`,
+                    type: "GET",
+                    success: function(user) {
+                        // Display the user information
+                        alert(`User ID: ${user.user_id}\nName: ${user.name}\nAge: ${user.age}\nGender: ${user.gender}`);
+                    },
+                    error: function() {
+                        alert("User not found.");
+                    }
+                });
+            });
             
             $("#create-user-form").submit(function(event) {
                 event.preventDefault();
@@ -80,24 +125,81 @@
                 //     listUsers();
                 // });
             });
+            let fieldCount = 1;
+const maxFields = 3;
+
+            $("#add-update-field").click(function() {
+                if (fieldCount < maxFields) {
+                    fieldCount++;
+                    const newRow = $(`
+                        <div class="update-field-row">
+                            <label for="update-field">Field:</label>
+                            <select class="update-field" required>
+                                <option value="name">Name</option>
+                                <option value="age">Age</option>
+                                <option value="gender">Gender</option>
+                            </select>
+                            <label for="update-value">Value:</label>
+                            <input type="text" class="update-value" required>
+                            <button type="button" class="remove-update-field">-</button>
+                        </div>
+                    `);
+                    newRow.find(".remove-update-field").click(function() {
+                        newRow.remove();
+                        fieldCount--;
+                    });
+                    $("#update-fields").append(newRow);
+                } else {
+                    alert("You can update a maximum of 3 fields.");
+                }
+            });
+
+            // $("#update-user-form").submit(function(event) {
+            //     event.preventDefault();
+            //     const user_id = $("#update-user-id").val();
+            //     const update_field = $("#update-field").val();
+            //     let update_value = $("#update-value").val();
+    
+            //     if (update_field === 'age') {
+            //         update_value = parseInt(update_value);
+            //     }
+
+            //     const update_data = {
+            //         [update_field]: update_value
+            //     };                
+            //     // const update_data = {
+            //     //     [$("#update-field").val()]: $("#update-value").val()
+            //     // };
+            //     console.log("upadate_data:", update_data);
+            //     $.ajax({
+            //         url: `${API_BASE_URL}/users/${user_id}`,
+            //         type: "PATCH",
+            //         data: JSON.stringify(update_data),
+            //         contentType: "application/json; charset=utf-8",
+            //         success: function(result) {
+            //             alert(result.message);
+            //             listUsers();
+            //         }
+            //     });
+            // });
 
             $("#update-user-form").submit(function(event) {
                 event.preventDefault();
                 const user_id = $("#update-user-id").val();
-                const update_field = $("#update-field").val();
-                let update_value = $("#update-value").val();
-    
-                if (update_field === 'age') {
-                    update_value = parseInt(update_value);
-                }
+                const update_data = {};
 
-                const update_data = {
-                    [update_field]: update_value
-                };                
-                // const update_data = {
-                //     [$("#update-field").val()]: $("#update-value").val()
-                // };
-                console.log("upadate_data:", update_data);
+                $(".update-field-row").each(function() {
+                    const update_field = $(this).find(".update-field").val();
+                    let update_value = $(this).find(".update-value").val();
+
+                    if (update_field === "age") {
+                        update_value = parseInt(update_value);
+                    }
+
+                    update_data[update_field] = update_value;
+                });
+
+                console.log("update_data:", update_data);
                 $.ajax({
                     url: `${API_BASE_URL}/users/${user_id}`,
                     type: "PATCH",
@@ -109,7 +211,6 @@
                     }
                 });
             });
-
             $("#delete-user-form").submit(function(event) {
                 event.preventDefault();
                 const user_id = $("#delete-user-id").val();
