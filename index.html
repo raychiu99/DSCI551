@@ -11,13 +11,28 @@
     <button type="button" id="list-users">List Users</button>
     <div id="user-list"></div>
     
-    <h2>Find User</h2>
-    <form id="get-user-form">
-        <label for="get-user-id">User ID:</label>
-        <input type="text" id="get-user-id" required>
-        <input type="submit" value="Get User">
-    </form>    
-
+    <h2>Find User</h2>  
+    <form id="find-user-form">
+        <label for="field">Field:</label>
+        <select id="field">
+            <option value="name">Name</option>
+            <option value="age">Age</option>
+            <option value="gender">Gender</option>
+        </select>
+        <label for="find-value">Value:</label>
+        <input type="text" id="find-value">
+        <label for="start-at">Start At:</label>
+        <input type="text" id="start-at">
+        <label for="end-at">End At:</label>
+        <input type="text" id="end-at">
+        <label for="limit-to-first">First:</label>
+        <input type="number" id="limit-to-first">
+        <label for="limit-to-last">Last:</label>
+        <input type="number" id="limit-to-last">
+        <input type="submit" value="Find Users">
+    </form>
+    
+    
     <h2>Create User</h2>
     <form id="create-user-form">
         <label for="user-id">User ID:</label>
@@ -50,8 +65,8 @@
         <button type="submit">Update User</button>
     </form> -->
     <form id="update-user-form">
-        <label for="user-id">User ID:</label>
-        <input type="text" id="user-id" required>
+        <label for="update-user-id">User ID:</label>
+        <input type="text" id="update-user-id" required>
         <br>
         <div id="update-fields">
             <div class="update-field-row">
@@ -79,27 +94,50 @@
     </form>
 
     <script>
-        const API_BASE_URL = "http://34.217.134.164:5000";
+        const API_BASE_URL = "http://52.34.29.238:5000";
 
 
         $(document).ready(function() {
             $("#list-users").click(listUsers);
 
-            $("#get-user-form").submit(function(event) {
+            $("#find-user-form").submit(function(event) {
                 event.preventDefault();
-                const user_id = $("#get-user-id").val();
-                $.ajax({
-                    url: `${API_BASE_URL}/users/${user_id}`,
-                    type: "GET",
-                    success: function(user) {
-                        // Display the user information
-                        alert(`User ID: ${user.user_id}\nName: ${user.name}\nAge: ${user.age}\nGender: ${user.gender}`);
-                    },
-                    error: function() {
-                        alert("User not found.");
-                    }
-                });
+                const field = $("#field").val();
+                let find_value = $("#find-value").val();
+                let start_at = $("#start-at").val();
+                let end_at = $("#end-at").val();
+                const limit_to_first = parseInt($("#limit-to-first").val());
+                const limit_to_last = parseInt($("#limit-to-last").val());
+
+                if (field === 'age') {
+                    find_value = parseInt(find_value);
+                    start_at = parseInt(start_at);
+                    end_at = parseInt(end_at);
+                }
+
+                let queryParams = {};
+                if (find_value) {
+                    queryParams.equalTo = find_value;
+                }
+                if (start_at) {
+                    queryParams.startAt = start_at;
+                }
+                if (end_at) {
+                    queryParams.endAt = end_at;
+                }
+                if (field) {
+                    queryParams.orderBy = field;
+                }
+                if (limit_to_first) {
+                    queryParams.limitToFirst = limit_to_first;
+                }
+                if (limit_to_last) {
+                    queryParams.limitToLast = limit_to_last;
+                }
+
+                listUsers(queryParams);
             });
+
             
             $("#create-user-form").submit(function(event) {
                 event.preventDefault();
@@ -239,6 +277,27 @@ const maxFields = 3;
                 console.error('Error fetching users:', error);
             });
         }
+        // function listUsers(queryParams = {}) {
+        //     // Serialize queryParams as URL-encoded query string
+        //     const queryString = $.param(queryParams);
+
+        //     $.ajax({
+        //         url: `${API_BASE_URL}/users.json${queryString ? '?' + queryString : ''}`,
+        //         type: "GET",
+        //         success: function(users) {
+        //             let userList = "<ul>";
+        //             for (const user of users) {
+        //                 userList += `<li>${user._id}: ${user.name}, ${user.age}, ${user.gender}</li>`;
+        //             }
+        //             userList += "</ul>";
+        //             $("#user-list").html(userList);
+        //         },
+        //         error: function(err) {
+        //             console.log("Error fetching users:", err);
+        //         }
+        //     });
+        // }
+
     </script>
 </body>
 </html>
