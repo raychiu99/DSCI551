@@ -9,10 +9,11 @@ import re
 import requests
 import certifi
 from bson import json_util, ObjectId
-
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+CORS(app)
 ##MongoDB user
 username = "chengrue"
 password = "Dsci551"
@@ -44,11 +45,11 @@ def handle_request(collection_name,key):
 		result = collection.replace_one({'_id': ObjectId(oid)}, data)
 		response_data = data
 	elif request.method == 'PATCH':
-		name = data["name"]
-		document = collection.find_one({"_id": oid})
-		print(document,name)
+#		name = data["name"]
+		document = collection.find_one({"_id": ObjectId(oid)})
+		print(document)
 		if document:
-			result = collection.update_one({'_id': oid}, {'$set': data})
+			result = collection.update_one({'_id': ObjectId(oid)}, {'$set': data})
 			response_data = data
 		else:
 			collection.insert_one(data)

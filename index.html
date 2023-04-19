@@ -33,6 +33,8 @@
     </form>
     
     
+    
+    
     <h2>Create User</h2>
     <form id="create-user-form">
         <label for="user-id">User ID:</label>
@@ -89,12 +91,12 @@
     <h2>Delete User</h2>
     <form id="delete-user-form">
         <label for="delete-user-id">User ID:</label>
-        <input type="number" id="delete-user-id" name="delete-user-id" required>
+        <input type="text" id="delete-user-id" name="delete-user-id" required>
         <button type="submit">Delete User</button>
     </form>
 
     <script>
-        const API_BASE_URL = "http://52.34.29.238:5000";
+        const API_BASE_URL = "http://127.0.0.1:5000";
 
 
         $(document).ready(function() {
@@ -134,7 +136,7 @@
                 if (limit_to_last) {
                     queryParams.limitToLast = limit_to_last;
                 }
-
+                console.log('Received user data:', queryParams);
                 listUsers(queryParams);
             });
 
@@ -149,7 +151,7 @@
                 };
                 console.log("User data:", user_data);
                 $.ajax({
-                    url: `${API_BASE_URL}/users`,
+                    url: `${API_BASE_URL}/users.json`,
                     type: "POST",
                     data: JSON.stringify(user_data),
                     contentType: "application/json; charset=utf-8",
@@ -239,7 +241,7 @@ const maxFields = 3;
 
                 console.log("update_data:", update_data);
                 $.ajax({
-                    url: `${API_BASE_URL}/users/${user_id}`,
+                    url: `${API_BASE_URL}/users/${user_id}.json`,
                     type: "PATCH",
                     data: JSON.stringify(update_data),
                     contentType: "application/json; charset=utf-8",
@@ -263,42 +265,44 @@ const maxFields = 3;
             });
         });
 
-        function listUsers() {
-            fetch(`${API_BASE_URL}/users`)
-            .then(response => response.json())
-            .then(users => {
-                const userList = document.getElementById('user-list');
-                userList.innerHTML = '';
-                users.forEach(user => {
-                    userList.innerHTML += `<li>User ID: ${user._id}, Name: ${user.name}, Age: ${user.age}, Gender: ${user.gender}</li>`;
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching users:', error);
+//      function listUsers() {
+//          fetch(`${API_BASE_URL}/users.json`)
+//          .then(response => response.json())
+//          .then(users => {
+//              console.log('Received user data:', users);
+//              const userList = document.getElementById('user-list');
+//              userList.innerHTML = '';
+//              users.forEach(user => {
+//                  userList.innerHTML += `<li>User ID: ${user._id.$oid}, Name: ${user.name}, Age: ${user.age}</li>`;
+//              });
+//          })
+//          .catch(error => {
+//              console.error('Error fetching users:', error);
+//          });
+//      }
+        function listUsers(queryParams = {}) {
+            // Serialize queryParams as URL-encoded query string
+            const queryString = $.param(queryParams);
+
+            $.ajax({
+                url: `${API_BASE_URL}/users.json${queryString ? '?' + queryString : ''}`,
+                type: "GET",
+                success: function(users) {
+                    let userList = "<ul>";
+                    for (const user of users) {
+                        userList += `<li>User ID: ${user._id.$oid}, Name: ${user.name}, Age: ${user.age}</li>`;
+                    }
+                    userList += "</ul>";
+                    $("#user-list").html(userList);
+                },
+                error: function(err) {
+                    console.log("Error fetching users:", err);
+                }
             });
         }
-        // function listUsers(queryParams = {}) {
-        //     // Serialize queryParams as URL-encoded query string
-        //     const queryString = $.param(queryParams);
-
-        //     $.ajax({
-        //         url: `${API_BASE_URL}/users.json${queryString ? '?' + queryString : ''}`,
-        //         type: "GET",
-        //         success: function(users) {
-        //             let userList = "<ul>";
-        //             for (const user of users) {
-        //                 userList += `<li>${user._id}: ${user.name}, ${user.age}, ${user.gender}</li>`;
-        //             }
-        //             userList += "</ul>";
-        //             $("#user-list").html(userList);
-        //         },
-        //         error: function(err) {
-        //             console.log("Error fetching users:", err);
-        //         }
-        //     });
-        // }
 
     </script>
 </body>
 </html>
            
+            
