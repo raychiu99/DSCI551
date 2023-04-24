@@ -10,10 +10,12 @@ import requests
 import certifi
 from bson import json_util, ObjectId
 from flask_cors import CORS
-
+from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
 CORS(app)
+#socketio = SocketIO(app)
+#socketio = SocketIO(app, cors_allowed_origins="http://127.0.0.1:5000")
 ##MongoDB user
 username = "chengrue"
 password = "Dsci551"
@@ -23,9 +25,7 @@ mydatabase = "Project"
 db = client.Project
 print(db.list_collection_names())
 
-
-
-@app.route('/<collection_name>/<key>.json', methods=['PUT', 'PATCH', 'DELETE'])
+@app.route('/<collection_name>/<int:key>.json', methods=['PUT', 'PATCH', 'DELETE'])
 def handle_request(collection_name,key):
 #	collection_name = re.split('[./]', path)[0]
 	oid = key
@@ -42,20 +42,24 @@ def handle_request(collection_name,key):
 	response_data = None
 	
 	if request.method == 'PUT':
-		result = collection.replace_one({'_id': ObjectId(oid)}, data)
+		result = collection.replace_one({'_id': oid}, data)
 		response_data = data
+		#socketio.emit('data_updated', {'event': 'updated', 'data': data})
 	elif request.method == 'PATCH':
 #		name = data["name"]
-		document = collection.find_one({"_id": ObjectId(oid)})
+		document = collection.find_one({"_id": oid})
 		print(document)
 		if document:
-			result = collection.update_one({'_id': ObjectId(oid)}, {'$set': data})
+			result = collection.update_one({'_id': oid}, {'$set': data})
 			response_data = data
+			#socketio.emit('data_updated', {'event': 'created', 'data': data})
 		else:
 			collection.insert_one(data)
 			response_data = data
+			#socketio.emit('data_updated', {'event': 'updated', 'data': data})
 	elif request.method == 'DELETE':
-		result = collection.delete_one({'_id': ObjectId(oid)})
+		result = collection.delete_one({'_id': oid})
+		#socketio.emit('data_updated', {'event': 'deleted', 'user_id': oid})
 		return jsonify({"deleted_count": result.deleted_count}), 200		
 	
 	return(json.loads(json_util.dumps(response_data)))
@@ -64,7 +68,7 @@ def handle_request(collection_name,key):
 def post_reauest(collection_name):
 	collection = db[collection_name]
 	jsons = request.get_data().decode('utf-8')
-	print(jsons)
+	#print(jsons)
 	if jsons:
 		data = json.loads(jsons)
 		print(data,'here')
@@ -72,7 +76,8 @@ def post_reauest(collection_name):
 	if request.method == 'POST':
 		collection.insert_one(data)
 		response_data = data
-	return(json.loads(json_util.dumps(response_data)))
+	#socketio.emit('data_updated', {'event': 'created', 'data': data})
+	return(json.loads(json_util.dumps(response_data))) 
 
 @app.route('/<collection_name>.json', methods=['GET'])
 def get_request(collection_name):
@@ -124,11 +129,9 @@ def get_request(collection_name):
 			
 		return(json.loads(json_util.dumps(result)))
 	
-		
-		
-		
-	
 if __name__ == '__main__':
 	app.run(debug=True)
+	#socketio.run(app, host='0.0.0.0', debug=True)
+	
 	
 	
