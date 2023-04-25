@@ -42,7 +42,14 @@ def handle_request(collection_name,key):
 	response_data = None
 	
 	if request.method == 'PUT':
-		result = collection.replace_one({'_id': oid}, data)
+		document = collection.find_one({"_id": oid})
+		print(document)
+		if document:
+			result = collection.replace_one({'_id': oid},data)
+		else:
+			collection.update_one({'_id': oid}, {'$set': data}, upsert=True)
+			
+		
 		response_data = data
 		#socketio.emit('data_updated', {'event': 'updated', 'data': data})
 	elif request.method == 'PATCH':
@@ -50,11 +57,11 @@ def handle_request(collection_name,key):
 		document = collection.find_one({"_id": oid})
 		print(document)
 		if document:
-			result = collection.update_one({'_id': oid}, {'$set': data})
+			result = collection.update_one({'_id': oid}, {'$set': data}, upsert=True)
 			response_data = data
 			#socketio.emit('data_updated', {'event': 'created', 'data': data})
 		else:
-			collection.insert_one(data)
+			collection.update_one({'_id': oid}, {'$set': data}, upsert=True)
 			response_data = data
 			#socketio.emit('data_updated', {'event': 'updated', 'data': data})
 	elif request.method == 'DELETE':
@@ -65,7 +72,7 @@ def handle_request(collection_name,key):
 	return(json.loads(json_util.dumps(response_data)))
 
 @app.route('/<collection_name>.json', methods=['POST'])
-def post_reauest(collection_name):
+def post_request(collection_name):
 	collection = db[collection_name]
 	jsons = request.get_data().decode('utf-8')
 	#print(jsons)
@@ -112,7 +119,12 @@ def get_request(collection_name):
 				limit = 0
 				
 			if "equalTo" in query_params:
-				filters["name"] = query_params["equalTo"].strip('"')
+				equalTo_value = query_params["equalTo"].strip('"')
+				if equalTo_value.isdigit():
+					filters[order_by] = int(equalTo_value)
+				else:
+					filters[order_by] = equalTo_value
+#				filters[order_by] = query_params["equalTo"].strip('"')
 				
 			if "startAt" in query_params:
 				filters[order_by] = {"$gte": int(query_params["startAt"].strip('"'))}
@@ -126,12 +138,13 @@ def get_request(collection_name):
 			print(filters,order_by,sort_direction,index_name,limit)
 		else:
 			result = collection.find(filters)
-			
+#		print(list(result))
 		return(json.loads(json_util.dumps(result)))
 	
 if __name__ == '__main__':
 	app.run(debug=True)
 	#socketio.run(app, host='0.0.0.0', debug=True)
+	
 	
 	
 	
