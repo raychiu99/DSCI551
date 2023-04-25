@@ -236,7 +236,7 @@ const maxFields = 3;
                 success: function(users) {
                     let userList = "<ul>";
                     for (const user of users) {
-                        userList += `<li>User ID: ${user._id}, Name: ${user.name}, Age: ${user.age},Gender: ${user.gender}</li>`;
+                        userList += `<li>User ID: ${user._id}, Name: ${user.name}, Age: ${user.age}</li>`;
                     }
                     userList += "</ul>";
                     $("#user-list").html(userList);
