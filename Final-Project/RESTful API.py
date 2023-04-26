@@ -98,16 +98,21 @@ def get_request(collection_name):
 	if request.method == 'GET':
 		if "orderBy" in query_params:
 			order_by = query_params["orderBy"].strip('"')
-			index_name = collection.create_index([(order_by, ASCENDING)])
-			print(order_by, index_name)
-			indexes = collection.list_indexes()
-			print("Indexes in the 'users' collection:")
-			for index in indexes:
-				print(index["name"])
+			if order_by != "$key" and order_by != "$value":
+				index_name = collection.create_index([(order_by, ASCENDING)])
+				print(order_by, index_name)
+				indexes = collection.list_indexes()
 			if order_by == "$key":
 				order_by = "_id"
 			elif order_by == "$value":
-				return {"error": "Ordering by value is not supported."}, 400
+				indexes = collection.list_indexes()
+				if indexes is None:
+					return {"error": "Ordering by value is not supported. There's no index created"}, 400
+				print("Indexes in the 'users' collection:")
+				indexes = collection.index_information()
+				key = list(indexes.keys())[1]
+				order_by = key.split("_")[0]
+				print(order_by)
 			
 			sort_direction = 1
 			if "limitToFirst" in query_params:
@@ -128,14 +133,14 @@ def get_request(collection_name):
 				
 			if "startAt" in query_params:
 				filters[order_by] = {"$gte": int(query_params["startAt"].strip('"'))}
-				print(filters)
+#				print(filters)
 			if "endAt" in query_params:
 				if order_by not in filters:
 					filters[order_by] = {}
 				filters[order_by]["$lte"] = int(query_params["endAt"].strip('"'))
 				
 			result = collection.find(filters).sort(order_by, sort_direction).limit(limit)
-			print(filters,order_by,sort_direction,index_name,limit)
+#			print(filters,order_by,sort_direction,limit)
 		else:
 			result = collection.find(filters)
 #		print(list(result))
