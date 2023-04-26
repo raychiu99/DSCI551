@@ -1,4 +1,12 @@
 # DSCI551- Project: Firebase Emulsion
+There are two main part of our Firebase Emulsion. **(in the Final-Peoject folder)**
+
+technology used : flask, mongoDB, HTML, websockets
+
+1. RESTful API
+
+2. Web App
+
 
 
 ## RESTful API Testing Code:
@@ -6,8 +14,8 @@
 
 ### GET:
 
-Our API supports GET function so that user can retrive the data from our mongodb database,Our get function supports the filter functions
-order by, limit to first&Last, startat end at, equal to also if we are using orderby the API will create an index in our mongodb data base to help sort the datas
+Our API supports GET function so that user can retrive the data from our mongodb database. Our get function supports the filter functions
+order by, limit to first&Last, startat end at, equal to. Also if we are using orderby the API will create an index in our mongodb data base to help sort the datas
 
 curl -X GET 'http://localhost:5000/users.json'
 
