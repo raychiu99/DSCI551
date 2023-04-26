@@ -1,7 +1,7 @@
 # DSCI551- Project: Firebase Emulsion
 There are two main part of our Firebase Emulsion. **(in the Final-Peoject folder)**
 
-technology used : flask, mongoDB, HTML, websockets
+technology used : flask, mongoDB, HTML, websockets, JavaScript
 
 1. RESTful API
 
