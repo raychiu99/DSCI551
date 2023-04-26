@@ -107,12 +107,12 @@ def get_request(collection_name,  key = -1, collection_sort= None):
 			print(document)
 			order_by = query_params["orderBy"].strip('"')
 			print(order_by)
-			if order_by not in document[1]:
-				return {"error": "OrderBy is not allowed, choose other category"}, 400
+			
 			if order_by != "$key" and order_by != "$value":
 				index_name = collection.create_index([(order_by, ASCENDING)])
 				print(order_by, index_name)
 				indexes = collection.list_indexes()
+			
 			if order_by == "$key":
 				order_by = "_id"
 			elif order_by == "$value" :
@@ -131,6 +131,8 @@ def get_request(collection_name,  key = -1, collection_sort= None):
 #				key = list(indexes.keys())[1]
 #				order_by = key.split("_")[0]
 #				print(order_by)
+			elif order_by not in document[1]:
+				return {"error": "OrderBy is not allowed, choose other category"}, 400
 			
 			sort_direction = 1
 			if "limitToFirst" in query_params:
