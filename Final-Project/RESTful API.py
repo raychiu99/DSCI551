@@ -48,8 +48,6 @@ def handle_request(collection_name,key):
 			result = collection.replace_one({'_id': oid},data)
 		else:
 			collection.update_one({'_id': oid}, {'$set': data}, upsert=True)
-			
-		
 		response_data = data
 		socketio.emit('data_updated', {'event': 'updated', 'data': data})
 	elif request.method == 'PATCH':
@@ -86,9 +84,15 @@ def post_request(collection_name):
 	socketio.emit('data_updated', {'event': 'created', 'data': data})
 	return(json.loads(json_util.dumps(response_data))) 
 
+
+
 @app.route('/<collection_name>.json', methods=['GET'])
-def get_request(collection_name):
+@app.route('/<collection_name>/<key>.json', methods=['GET'])
+@app.route('/<collection_name>/<key>/<collection_sort>.json', methods=['GET'])
+#	get_request(collection_name, 0, None)
+def get_request(collection_name,  key = -1, collection_sort= None):
 #	collection_name = re.split('[./]', path)[0]
+	print(collection_name,collection_sort, key)
 	print(collection_name)
 	collection = db[collection_name]
 	query_params = request.args
@@ -96,23 +100,37 @@ def get_request(collection_name):
 	filters = {}
 	
 	if request.method == 'GET':
+		if int(key) > -1:
+			filters["_id"] = int(key)
 		if "orderBy" in query_params:
+			document = list(collection.find())
+			print(document)
 			order_by = query_params["orderBy"].strip('"')
+			print(order_by)
+			if order_by not in document[1]:
+				return {"error": "OrderBy is not allowed, choose other category"}, 400
 			if order_by != "$key" and order_by != "$value":
 				index_name = collection.create_index([(order_by, ASCENDING)])
 				print(order_by, index_name)
 				indexes = collection.list_indexes()
 			if order_by == "$key":
 				order_by = "_id"
-			elif order_by == "$value":
-				indexes = collection.list_indexes()
-				if indexes is None:
-					return {"error": "Ordering by value is not supported. There's no index created"}, 400
-				print("Indexes in the 'users' collection:")
-				indexes = collection.index_information()
-				key = list(indexes.keys())[1]
-				order_by = key.split("_")[0]
-				print(order_by)
+			elif order_by == "$value" :
+				if key and collection_sort:
+					document = collection.find_one({"_id": int(key)})
+					if collection_sort in document:
+						print("I found ", collection_sort)
+						order_by = collection_sort
+					else:
+						return {"error": "Ordering by value is not allowed, category does not exists"}, 400
+				else:
+#				indexes = collection.list_indexes()
+#				if indexes is None:
+					return {"error": "Ordering by value is not allowed, no category"}, 400
+#				indexes = collection.index_information()
+#				key = list(indexes.keys())[1]
+#				order_by = key.split("_")[0]
+#				print(order_by)
 			
 			sort_direction = 1
 			if "limitToFirst" in query_params:
@@ -129,7 +147,6 @@ def get_request(collection_name):
 					filters[order_by] = int(equalTo_value)
 				else:
 					filters[order_by] = equalTo_value
-#				filters[order_by] = query_params["equalTo"].strip('"')
 				
 			if "startAt" in query_params:
 				filters[order_by] = {"$gte": int(query_params["startAt"].strip('"'))}
@@ -145,6 +162,8 @@ def get_request(collection_name):
 			result = collection.find(filters)
 #		print(list(result))
 		return(json.loads(json_util.dumps(result)))
+	
+	
 @app.route('/')
 def index():
     with open('index.html', 'r') as file:
