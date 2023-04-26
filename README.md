@@ -82,6 +82,8 @@ curl -X DELETE 'http://localhost:5000/another/477.json'
 
 ## WEB APP
 
-To run the web app please run the **RESTful API.py** first and then run **Index.HTML**
+To run the web app please run the **RESTful API.py** first and then open http://127.0.0.1:5000/ in the browser. 
+
+Note: Please make sure that **RESTful APT.py**, **index.html**, and **static** folder are under the same directory.
 
 The web app is showing a realtime syncing of the user database, and it's able to support Find, Create, Update, and Delete function of the database 
