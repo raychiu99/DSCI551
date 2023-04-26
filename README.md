@@ -21,6 +21,8 @@ curl -X GET 'http://localhost:5000/users.json'
 
 curl -X GET 'http://localhost:5000/users.json?orderBy="$key"'
 
+curl -X GET 'http://localhost:5000/users.json?orderBy="$value"'
+
 curl -X GET 'http://localhost:5000/users.json?orderBy="age"'
 
 curl -X GET 'http://localhost:5000/users.json?orderBy="age"&limitToFirst=3'
