@@ -6,6 +6,7 @@ from pymongo import MongoClient, ASCENDING, DESCENDING
 from bson.json_util import dumps
 import json
 import re
+import collections
 import requests
 import certifi
 from bson import json_util, ObjectId
@@ -24,6 +25,8 @@ mydatabase = "Project"
 # Select the database
 db = client.Project
 print(db.list_collection_names())
+
+
 
 @app.route('/<collection_name>/<int:key>.json', methods=['PUT', 'PATCH', 'DELETE'])
 def handle_request(collection_name,key):
@@ -88,11 +91,11 @@ def post_request(collection_name):
 
 @app.route('/<collection_name>.json', methods=['GET'])
 @app.route('/<collection_name>/<key>.json', methods=['GET'])
-@app.route('/<collection_name>/<key>/<collection_sort>.json', methods=['GET'])
+@app.route('/<collection_name>/<key>/<category>.json', methods=['GET'])
 #	get_request(collection_name, 0, None)
-def get_request(collection_name,  key = -1, collection_sort= None):
+def get_request(collection_name,  key = -1, category= None):
 #	collection_name = re.split('[./]', path)[0]
-	print(collection_name,collection_sort, key)
+	print(collection_name,category, key)
 	print(collection_name)
 	collection = db[collection_name]
 	query_params = request.args
@@ -102,6 +105,9 @@ def get_request(collection_name,  key = -1, collection_sort= None):
 	if request.method == 'GET':
 		if int(key) > -1:
 			filters["_id"] = int(key)
+#			document = collection.find_one({"_id": int(key)})
+#			if not document:
+#				return {"error": "null"}, 400
 		if "orderBy" in query_params:
 			document = list(collection.find())
 			print(document)
@@ -116,11 +122,41 @@ def get_request(collection_name,  key = -1, collection_sort= None):
 			if order_by == "$key":
 				order_by = "_id"
 			elif order_by == "$value" :
-				if key and collection_sort:
+				if key and category:
 					document = collection.find_one({"_id": int(key)})
-					if collection_sort in document:
-						print("I found ", collection_sort)
-						order_by = collection_sort
+#					print(document[category])
+					if category in document:
+						print("I found ", category)
+						order_by = category
+#						now = document[category]
+#						result1 = sorted(now.items(), key=lambda item: item[1])
+#						result = {k: v for k, v in sorted(now.items(), key=lambda item: item[1])}
+#						sortedo = dict(result1)
+#						print("correct", result, sortedo)
+						now = document[category]
+						print(now)
+						if isinstance(now, dict):
+							if "limitToFirst" in query_params:
+								limit = int(query_params["limitToFirst"])
+							elif "limitToLast" in query_params:
+								limit = int(query_params["limitToLast"])
+							now = json.loads(json_util.dumps(now))
+							result = {k: v for k, v in sorted(now.items(), key=lambda item: item[1])}
+							if "limitToFirst" in query_params:
+								limit = int(query_params["limitToFirst"])
+								smallest_score = {k: v for k, v in list(result.items())[:limit]}
+								print(smallest_score)
+								return json.dumps({category: smallest_score})
+							elif "limitToLast" in query_params:
+								limit = int(query_params["limitToLast"])
+								biggest_score = {k: v for k, v in list(result.items())[-limit:]}
+								print(biggest_score)
+								return json.dumps({category: biggest_score})
+								
+							return json.dumps({category: result})
+#						return {category: {k: v for k, v in sorted(document[category].items(), key=lambda item: item[1])}}
+						else:
+							return {category: document[category]}
 					else:
 						return {"error": "Ordering by value is not allowed, category does not exists"}, 400
 				else:
